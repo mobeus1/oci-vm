@@ -1,0 +1,62 @@
+// ```yaml
+name: Deploy to OCI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: "1.0.0"
+
+      - name: Install OCI CLI
+        run: |
+          curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh | sudo bash
+          echo 'export PATH=$PATH:/root/bin' >> $GITHUB_ENV
+
+      - name: Configure OCI CLI
+        run: |
+          echo "[DEFAULT]" >> ~/.oci/config
+          echo "user=YOUR_USER_OCID" >> ~/.oci/config
+          echo "fingerprint=YOUR_API_KEY_FINGERPRINT" >> ~/.oci/config
+          echo "tenancy=YOUR_TENANCY_OCID" >> ~/.oci/config
+          echo "region=YOUR_REGION" >> ~/.oci/config
+        env:
+          OCI_CLI_AUTH: instance_principal
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+// ```
+
+// Make sure to replace the placeholders with your own values:
+
+// - `YOUR_USER_OCID`: The OCID (Oracle Cloud Identifier) of your user.
+// - `YOUR_API_KEY_FINGERPRINT`: The fingerprint of your API key.
+// - `YOUR_TENANCY_OCID`: The OCID of your tenancy.
+// - `YOUR_REGION`: The Oracle Cloud region where you want to deploy the VM (e.g., `us-ashburn-1`).
+
+// 3. Commit and push the changes to your GitHub repository.
+
+// 4. GitHub Actions will automatically detect the workflow file and start executing the steps defined in the pipeline.
+
+// This pipeline uses the `hashicorp/setup-terraform` action to set up Terraform, installs the OCI CLI, configures it with the necessary credentials, and then runs the Terraform commands to initialize, plan, and apply the deployment of the Oracle Linux VM.
+
+// Remember to configure the necessary secrets in your GitHub repository settings for the OCI credentials, such as `TENANCY_OCID`, `USER_OCID`, `API_KEY_FINGERPRINT`, and `REGION`.
+
+// With this CI/CD pipeline in place, whenever you push changes to the `main` branch of your repository, GitHub Actions will automatically trigger the deployment of the Oracle Linux VM in OCI.
